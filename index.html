@@ -1,90 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Toast's Smart Panel</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Dashboard</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
       background-color: #111;
-      color: white;
-      text-align: center;
-      padding: 20px;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
     }
-    .panel {
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .card {
       background-color: #222;
-      margin: 20px auto;
       padding: 20px;
-      border-radius: 12px;
+      margin: 10px;
+      border-radius: 10px;
+      text-align: center;
+      width: 90%;
       max-width: 400px;
-      box-shadow: 0 0 10px #000;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
-    .clock {
-      font-size: 2.5em;
-      font-weight: bold;
-    }
-    .weather, .news {
-      font-size: 1.1em;
-      margin-top: 10px;
-    }
-    .button {
-      background-color: #00bcd4;
+
+    #toggle-btn {
+      background-color: #00d9ff;
       border: none;
       padding: 10px 20px;
-      color: white;
-      border-radius: 6px;
       margin-top: 10px;
-      font-size: 1em;
+      border-radius: 5px;
       cursor: pointer;
+      font-size: 16px;
+      color: #000;
     }
-    .button:hover {
-      background-color: #0097a7;
+
+    a {
+      color: #00d9ff;
+      text-decoration: none;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    ul li {
+      margin: 5px 0;
     }
   </style>
 </head>
 <body>
   <h1>Dashboard</h1>
 
-  <div class="panel clock" id="clock"></div>
+  <div class="card" id="clock">--:--</div>
+  <div class="card" id="weather">Weather info goes here</div>
+  <div class="card" id="news">News headlines will show here</div>
 
-  <div class="panel weather" id="weather">Loading weather...</div>
-
-  <div class="panel news" id="news">News headlines will show here</div>
-
-  <div class="panel">
+  <div class="card">
     <div>Smart Bulb</div>
-    <button class="button" onclick="toggleLight()">Toggle Light</button>
+    <button id="toggle-btn">Toggle Light</button>
   </div>
 
   <script>
+    // --- CLOCK ---
     function updateClock() {
       const now = new Date();
-      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      document.getElementById('clock').textContent = time;
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById('clock').textContent = `${hours}:${minutes} PM`;
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    async function fetchWeather() {
-      const apiKey = '01cf8b171f60e714858b54366f9393f9';
-      const city = 'Cleveland';
-      const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`);
-      const data = await response.json();
+    // --- WEATHER ---
+    const OPENWEATHER_API_KEY = '01cf8b171f60e714858b54366f9393f9';
+    const weatherEl = document.getElementById('weather');
 
-      const temp = data.main.temp.toFixed(1);
-      const desc = data.weather[0].description;
-      const weatherText = `${city}: ${temp}°C, ${desc}`;
-
-      document.getElementById('weather').textContent = weatherText;
+    async function updateWeather() {
+      try {
+        const city = 'Cleveland';
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${OPENWEATHER_API_KEY}&units=metric`);
+        const data = await response.json();
+        const temp = data.main.temp.toFixed(1);
+        const desc = data.weather[0].description;
+        weatherEl.textContent = `${city}: ${temp}°C, ${desc}`;
+      } catch {
+        weatherEl.textContent = 'Failed to load weather.';
+      }
     }
+    updateWeather();
+    setInterval(updateWeather, 1000 * 60 * 10);
 
-    function toggleLight() {
-      alert('Pretending to toggle smart bulb...');
+    // --- NEWS ---
+    const NEWS_API_KEY = '1761cfb81227431aaa04614267e48ea7';
+    const newsEl = document.getElementById('news');
+
+    async function updateNews() {
+      try {
+        const response = await fetch(`https://newsapi.org/v2/top-headlines?country=us&pageSize=5&apiKey=${NEWS_API_KEY}`);
+        const data = await response.json();
+
+        if (data.articles && data.articles.length > 0) {
+          const headlines = data.articles.map(article =>
+            `<li><a href="${article.url}" target="_blank">${article.title}</a></li>`
+          ).join('');
+          newsEl.innerHTML = `<ul>${headlines}</ul>`;
+        } else {
+          newsEl.textContent = 'No news available.';
+        }
+      } catch (error) {
+        newsEl.textContent = 'Failed to load news.';
+      }
     }
+    updateNews();
+    setInterval(updateNews, 1000 * 60 * 10); // refresh every 10 minutes
 
-    fetchWeather();
+    // --- BULB TOGGLE (placeholder) ---
+    document.getElementById('toggle-btn').addEventListener('click', () => {
+      alert('Light toggle action coming soon!');
+    });
   </script>
 </body>
 </html>
-
